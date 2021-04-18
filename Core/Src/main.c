@@ -24,7 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "can.h"
-
+#include "led.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,7 +61,17 @@ static void MX_TIM1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin == BTN_sendRandom_Pin) {
+        CAN_sendRandomLedMessage();
 
+    } else if (GPIO_Pin == BTN_sendMy_Pin) {
+        CAN_sendLedStatusMessage(LED_getCode());
+
+    } else if (GPIO_Pin == BTN_requestOther_Pin) {
+        CAN_sendLedStatusRequestLedMessage();
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -100,7 +110,6 @@ int main(void)
 
     LCD_test();
     CAN_Init();
-    CAN_Mytest();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,7 +180,7 @@ static void MX_CAN_Init(void)
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
   hcan.Init.Prescaler = 9;
-  hcan.Init.Mode = CAN_MODE_SILENT_LOOPBACK;
+  hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_4TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
@@ -249,8 +258,8 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
@@ -261,6 +270,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LCD_RS_Pin|LCD_RW_Pin|LCD_EN_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LED_1_Pin|LED_2_Pin|LED_3_Pin, GPIO_PIN_SET);
+
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -268,8 +280,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LCD_data4_Pin LCD_data5_Pin LCD_data6_Pin LCD_data7_Pin */
-  GPIO_InitStruct.Pin = LCD_data4_Pin|LCD_data5_Pin|LCD_data6_Pin|LCD_data7_Pin;
+  /*Configure GPIO pins : BTN_sendRandom_Pin BTN_sendMy_Pin BTN_requestOther_Pin */
+  GPIO_InitStruct.Pin = BTN_sendRandom_Pin|BTN_sendMy_Pin|BTN_requestOther_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LCD_data4_Pin LCD_data5_Pin LCD_data6_Pin LCD_data7_Pin
+                           LED_1_Pin LED_2_Pin LED_3_Pin */
+  GPIO_InitStruct.Pin = LCD_data4_Pin|LCD_data5_Pin|LCD_data6_Pin|LCD_data7_Pin
+                          |LED_1_Pin|LED_2_Pin|LED_3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -281,6 +301,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 

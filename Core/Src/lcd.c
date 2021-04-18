@@ -1,12 +1,17 @@
-#include <main.h>
+#include "lcd.h"
+
 #include <stm32f1xx_hal_tim.h>
 #include <string.h>
 #include <stdio.h>
-#include "lcd.h"
 
-#define timer htim1
+#include "main.h"
+
+
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+#define timer htim1     //define timer dor microsecond delay function
 extern TIM_HandleTypeDef timer;
-
 
 void LCD_delayMicros(uint16_t us) {
     __HAL_TIM_SET_COUNTER(&timer, 0);
@@ -14,7 +19,7 @@ void LCD_delayMicros(uint16_t us) {
 }
 
 void LCD_shiftOutHalfByte(uint8_t data, uint8_t rs) {
-    HAL_GPIO_WritePin(LCD_RS_GPIO_Port, LCD_RS_Pin, rs);  // rs = 1 for data, rs=0 for command
+    HAL_GPIO_WritePin(LCD_RS_GPIO_Port, LCD_RS_Pin, rs);
     /* write the data to the respective pin */
     HAL_GPIO_WritePin(LCD_data7_GPIO_Port, LCD_data7_Pin, ((data >> 3) & 0x01));
     HAL_GPIO_WritePin(LCD_data6_GPIO_Port, LCD_data6_Pin, ((data >> 2) & 0x01));
@@ -38,6 +43,7 @@ void LCD_sendCommand(char cmd) {
     /* send Lower Nibble */
     datatosend = ((cmd) & 0x0f);
     LCD_shiftOutHalfByte(datatosend, 0);
+    LCD_delayMicros(20);
 //    HAL_Delay(1);
 }
 
@@ -50,6 +56,7 @@ void LCD_sendData(char data) {
     /* send Lower nibble */
     datatosend = ((data) & 0x0f);
     LCD_shiftOutHalfByte(datatosend, 1);
+    LCD_delayMicros(20);
 //    HAL_Delay(1);
 }
 
@@ -117,17 +124,53 @@ void LCD_test() {
 
 void LCD_clear() {
     LCD_sendCommand(0b00000001);
+    HAL_Delay(10);
 }
 
 void LCD_CANPrintRxInfo(CAN_RxHeaderTypeDef *header, uint8_t *data) {
     char stringBuff[17];
     char isR = header->RTR ? 'R' : 'r';
-    char isI = header->RTR ? 'I' : 'i';
+    char isI = header->IDE ? 'I' : 'i';
     sprintf(stringBuff, "ID:0x%03lX %c%c DL%lu", header->StdId, isR, isI, header->DLC);
     LCD_setCursor(0, 0);
     LCD_sendString(stringBuff);
 
-    sprintf(stringBuff, "D0:0x%02X     RECV", header->DLC ? data[0] : 0x00);
+    uint8_t offset = 0;
+    memset(stringBuff, ' ', 16);    //clear buff
+    offset += sprintf(stringBuff + offset, "D:0x");
+    stringBuff[offset] = ' ';
+    for (int i = 0; i < MIN(header->DLC, 3); ++i) {
+        if (data != NULL) {
+            offset += sprintf(stringBuff + offset, "%02X ", data[i]);
+            stringBuff[offset] = ' ';
+        }
+    }
+    sprintf(stringBuff + 15 - 2, "RX");
+
+    LCD_setCursor(1, 0);
+    LCD_sendString(stringBuff);
+}
+
+void LCD_CANPrintTxInfo(CAN_TxHeaderTypeDef *header, uint8_t *data) {
+    char stringBuff[17];
+    char isR = header->RTR ? 'R' : 'r';
+    char isI = header->IDE ? 'I' : 'i';
+    sprintf(stringBuff, "ID:0x%03lX %c%c DL%lu", header->StdId, isR, isI, header->DLC);
+    LCD_setCursor(0, 0);
+    LCD_sendString(stringBuff);
+
+    uint8_t offset = 0;
+    memset(stringBuff, ' ', 16);    //clear buff
+    offset += sprintf(stringBuff + offset, "D:0x");
+    stringBuff[offset] = ' ';
+    for (int i = 0; i < MIN(header->DLC, 3); ++i) {
+        if (data != NULL) {
+            offset += sprintf(stringBuff + offset, "%02X ", data[i]);
+            stringBuff[offset] = ' ';
+        }
+    }
+    sprintf(stringBuff + 16 - 2, "TX");
+
     LCD_setCursor(1, 0);
     LCD_sendString(stringBuff);
 }

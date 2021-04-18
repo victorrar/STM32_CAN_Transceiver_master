@@ -60,6 +60,15 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
+#define BTN_sendRandom_Pin GPIO_PIN_5
+#define BTN_sendRandom_GPIO_Port GPIOA
+#define BTN_sendRandom_EXTI_IRQn EXTI9_5_IRQn
+#define BTN_sendMy_Pin GPIO_PIN_6
+#define BTN_sendMy_GPIO_Port GPIOA
+#define BTN_sendMy_EXTI_IRQn EXTI9_5_IRQn
+#define BTN_requestOther_Pin GPIO_PIN_7
+#define BTN_requestOther_GPIO_Port GPIOA
+#define BTN_requestOther_EXTI_IRQn EXTI9_5_IRQn
 #define LCD_data4_Pin GPIO_PIN_12
 #define LCD_data4_GPIO_Port GPIOB
 #define LCD_data5_Pin GPIO_PIN_13
@@ -74,6 +83,12 @@ void Error_Handler(void);
 #define LCD_RW_GPIO_Port GPIOA
 #define LCD_EN_Pin GPIO_PIN_10
 #define LCD_EN_GPIO_Port GPIOA
+#define LED_1_Pin GPIO_PIN_4
+#define LED_1_GPIO_Port GPIOB
+#define LED_2_Pin GPIO_PIN_5
+#define LED_2_GPIO_Port GPIOB
+#define LED_3_Pin GPIO_PIN_6
+#define LED_3_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
